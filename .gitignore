@@ -1,0 +1,14 @@
+# Secrets
+.env
+credentials.json
+token.json
+
+# Runtime state
+gmail_state.json
+
+# Python virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
