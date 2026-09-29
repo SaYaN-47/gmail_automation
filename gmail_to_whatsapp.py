@@ -410,6 +410,7 @@ def main():
     while True:
 
         try:
+            print("Checking Gmail...")
 
             check_for_new_emails(
                 service,
