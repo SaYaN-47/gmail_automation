@@ -75,29 +75,65 @@ twilio_client = Client(
 
 def get_gmail_service():
 
+    print("Starting Gmail authentication...", flush=True)
+
     creds = None
 
     if os.path.exists("token.json"):
+
+        print(
+            "token.json found.",
+            flush=True
+        )
 
         creds = Credentials.from_authorized_user_file(
             "token.json",
             SCOPES
         )
 
+    else:
+
+        print(
+            "token.json not found.",
+            flush=True
+        )
+
     if not creds or not creds.valid:
+
+        print(
+            "Gmail credentials are not valid.",
+            flush=True
+        )
 
         if creds and creds.expired and creds.refresh_token:
 
+            print(
+                "Access token expired. Refreshing using refresh token...",
+                flush=True
+            )
+
             creds.refresh(Request())
 
+            print(
+                "Token refreshed successfully.",
+                flush=True
+            )
+
         else:
+
+            print(
+                "Starting OAuth authorization...",
+                flush=True
+            )
 
             flow = InstalledAppFlow.from_client_secrets_file(
                 "credentials.json",
                 SCOPES
             )
 
-            creds = flow.run_local_server(port=0)
+            creds = flow.run_local_server(
+                port=0
+            )
 
         with open("token.json", "w") as token:
 
@@ -105,11 +141,35 @@ def get_gmail_service():
                 creds.to_json()
             )
 
-    return build(
+            print(
+                "Updated token.json.",
+                flush=True
+            )
+
+    else:
+
+        print(
+            "Existing Gmail credentials are valid.",
+            flush=True
+        )
+
+    print(
+        "Building Gmail API service...",
+        flush=True
+    )
+
+    service = build(
         "gmail",
         "v1",
         credentials=creds
     )
+
+    print(
+        "Gmail API service created.",
+        flush=True
+    )
+
+    return service
 
 
 # ============================================================
@@ -120,6 +180,11 @@ def load_state():
 
     if not os.path.exists(STATE_FILE):
 
+        print(
+            "No Gmail state file found. Creating initial state.",
+            flush=True
+        )
+
         return {
             "initialized": False,
             "processed_ids": []
@@ -127,7 +192,14 @@ def load_state():
 
     with open(STATE_FILE, "r") as file:
 
-        return json.load(file)
+        state = json.load(file)
+
+    print(
+        "Gmail state loaded.",
+        flush=True
+    )
+
+    return state
 
 
 def save_state(state):
@@ -139,6 +211,11 @@ def save_state(state):
             file,
             indent=4
         )
+
+    print(
+        "Gmail state saved.",
+        flush=True
+    )
 
 
 # ============================================================
@@ -195,17 +272,26 @@ def send_whatsapp(email):
         f"Preview:\n{email['snippet']}"
     )
 
+    print(
+        "Sending WhatsApp message...",
+        flush=True
+    )
+
     message = twilio_client.messages.create(
         from_=from_whatsapp,
         to=to_whatsapp,
         body=text
     )
 
-    print("WhatsApp sent!")
+    print(
+        "WhatsApp sent!",
+        flush=True
+    )
 
     print(
         "SID:",
-        message.sid
+        message.sid,
+        flush=True
     )
 
 
@@ -214,6 +300,11 @@ def send_whatsapp(email):
 # ============================================================
 
 def check_for_new_emails(service, state):
+
+    print(
+        "Checking Gmail...",
+        flush=True
+    )
 
     results = service.users().messages().list(
         userId="me",
@@ -225,7 +316,18 @@ def check_for_new_emails(service, state):
         []
     )
 
+    print(
+        f"Gmail returned {len(messages)} messages.",
+        flush=True
+    )
+
     if not messages:
+
+        print(
+            "No emails found.",
+            flush=True
+        )
+
         return
 
     processed_ids = set(
@@ -238,6 +340,11 @@ def check_for_new_emails(service, state):
     # --------------------------------------------------------
 
     if not state["initialized"]:
+
+        print(
+            "First Gmail check.",
+            flush=True
+        )
 
         for message in messages:
 
@@ -254,11 +361,13 @@ def check_for_new_emails(service, state):
         save_state(state)
 
         print(
-            "Initial Gmail state saved."
+            "Initial Gmail state saved.",
+            flush=True
         )
 
         print(
-            "Existing emails will not be forwarded."
+            "Existing emails will not be forwarded.",
+            flush=True
         )
 
         return
@@ -288,6 +397,12 @@ def check_for_new_emails(service, state):
     new_messages.reverse()
 
 
+    print(
+        f"New emails detected: {len(new_messages)}",
+        flush=True
+    )
+
+
     # --------------------------------------------------------
     # SEND NEW EMAILS
     # --------------------------------------------------------
@@ -303,19 +418,21 @@ def check_for_new_emails(service, state):
                 message_id
             )
 
-            print()
             print(
-                "New email detected!"
+                "New email detected!",
+                flush=True
             )
 
             print(
                 "From:",
-                email["sender"]
+                email["sender"],
+                flush=True
             )
 
             print(
                 "Subject:",
-                email["subject"]
+                email["subject"],
+                flush=True
             )
 
             send_whatsapp(
@@ -329,10 +446,14 @@ def check_for_new_emails(service, state):
         except Exception as error:
 
             print(
-                "Error processing email:"
+                "Error processing email:",
+                flush=True
             )
 
-            print(error)
+            print(
+                error,
+                flush=True
+            )
 
 
     # --------------------------------------------------------
@@ -374,31 +495,50 @@ def main():
     # GMAIL → WHATSAPP
     # --------------------------------------------------------
 
-    print("==============================")
-    print(" Gmail → WhatsApp Forwarder")
-    print("==============================")
+    print(
+        "==============================",
+        flush=True
+    )
 
     print(
-        "Connecting to Gmail..."
+        " Gmail → WhatsApp Forwarder",
+        flush=True
+    )
+
+    print(
+        "==============================",
+        flush=True
+    )
+
+    print(
+        "Connecting to Gmail...",
+        flush=True
     )
 
     service = get_gmail_service()
 
     print(
-        "Gmail connected."
-    )
-
-    print()
-
-    print(
-        f"Checking Gmail every {CHECK_INTERVAL} seconds..."
+        "Gmail connected.",
+        flush=True
     )
 
     print(
-        "Press CTRL+C to stop."
+        flush=True
     )
 
-    print()
+    print(
+        f"Checking Gmail every {CHECK_INTERVAL} seconds...",
+        flush=True
+    )
+
+    print(
+        "Press CTRL+C to stop.",
+        flush=True
+    )
+
+    print(
+        flush=True
+    )
 
     state = load_state()
 
@@ -410,7 +550,6 @@ def main():
     while True:
 
         try:
-            print("Checking Gmail...")
 
             check_for_new_emails(
                 service,
@@ -419,10 +558,15 @@ def main():
 
         except Exception as error:
 
-            print()
-            print("ERROR:")
-            print(error)
-            print()
+            print(
+                "ERROR:",
+                flush=True
+            )
+
+            print(
+                error,
+                flush=True
+            )
 
         time.sleep(
             CHECK_INTERVAL
